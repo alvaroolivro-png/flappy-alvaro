@@ -16,6 +16,7 @@
 </head>
 <body>
 <canvas id="game" width="400" height="640"></canvas>
+<div id="music" style="position:fixed;left:-9999px;top:-9999px;width:200px;height:60px;"></div>
 <script>
 window.__errs = [];
 window.onerror = function(msg, src, line){ window.__errs.push(msg + ' @' + line); };
@@ -54,6 +55,29 @@ try { best = parseInt(localStorage.getItem('flappyAlvaroBest') || '0', 10) || 0;
 const guy = { x: 110, y: GY / 2 - 40, vy: 0, rot: 0, r: 18, flapT: 0, landed: false };
 let pipes = [], parts = [];
 let scroll = 0, flash = 0, shake = 0, scoreFlash = 0, overT = 0;
+
+// ---------- background music (YouTube, starts on first tap) ----------
+const SONG_ID = '5v-JIJpvLuM';  // donkey kong music w/ ambience
+let ytPlayer = null, musicOn = true;
+window.onYouTubeIframeAPIReady = function(){
+  try {
+    ytPlayer = new YT.Player('music', {
+      videoId: SONG_ID,
+      playerVars: { autoplay: 0, loop: 1, playlist: SONG_ID, playsinline: 1 },
+      events: { onError: function(){ window.__errs.push('yt error'); } }
+    });
+  } catch(e){ window.__errs.push('yt api ' + e.message); }
+}
+(function(){ var t = document.createElement('script'); t.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(t); })();
+function musicStart(){
+  if (ytPlayer && ytPlayer.playVideo && musicOn) { try { ytPlayer.playVideo(); } catch(e){} }
+}
+function musicToggle(){
+  musicOn = !musicOn;
+  if (ytPlayer && ytPlayer.playVideo){
+    try { musicOn ? ytPlayer.playVideo() : ytPlayer.pauseVideo(); } catch(e){}
+  }
+}
 
 // ---------- audio (WebAudio blips, no assets) ----------
 let AC = null;
@@ -126,7 +150,7 @@ function reset(){
   pipes = []; overT = 0;
 }
 function tap(){
-  audioInit();
+  audioInit(); musicStart();
   if (state === READY) { state = PLAY; pipes = [ { x: W + 130, top: 0, gap: 0, passed: true } ]; pipes[0] = newPipe(); pipes[0].x = W + 130; flap(); }
   else if (state === PLAY) flap();
   else if (state === OVER && overT > 25) reset();
@@ -485,6 +509,7 @@ function draw(){
     text('CLICK · TAP · SPACE to flap', W / 2, GY - 40, 17, '#ffffff', '#16223d', 6);
     ctx.globalAlpha = 1;
     if (best > 0) text('BEST: ' + best, W / 2, GY - 16, 13, '#f4e9d8', '#16223d', 4);
+    text((musicOn ? '♪' : '♪✕') + ' music · press M', W / 2, GY - 60, 11, '#f4e9d8', '#16223d', 3);
   }
   if (state === OVER){
     const p = Math.min(overT / 18, 1);
@@ -523,6 +548,7 @@ cvs.addEventListener('pointerdown', e => { e.preventDefault(); tap(); });
 cvs.addEventListener('touchstart', e => { e.preventDefault(); if (!window.PointerEvent) tap(); }, { passive: false });
 window.addEventListener('keydown', e => {
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW'){ e.preventDefault(); tap(); }
+  if (e.code === 'KeyM'){ musicToggle(); }
 });
 
 // ---------- main loop ----------
