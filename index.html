@@ -67,7 +67,7 @@ window.onYouTubeIframeAPIReady = function(){
       events: { onError: function(){ window.__errs.push('yt error'); } }
     });
   } catch(e){ window.__errs.push('yt api ' + e.message); }
-}
+};
 (function(){ var t = document.createElement('script'); t.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(t); })();
 function musicStart(){
   if (ytPlayer && ytPlayer.playVideo && musicOn) { try { ytPlayer.playVideo(); } catch(e){} }
